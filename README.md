@@ -55,7 +55,7 @@ how it works.
 ### Use of Generative AI and/or Coding Agents
 There is no restriction on the tools that you may use to complete this assessment. However we have tried to make the nature of this assessment within the scope of someone completing it without using AI assistance, as well as someone using them effectively.
 
-If you do make use of Generative AI/Coding Agents, please include an `AI_log.md` where you log all of the work that you asked AI assistance to undertake, including any prompots. It will be of considerable advantage if you can highlight or document at least one instance where the AI undertook work that you then corrected or improved upon.
+If you do make use of Generative AI/Coding Agents, please include an `AI_log.md` where you log all of the work that you asked AI assistance to undertake, including any prompts, the model used as well number of tokens. It will be of considerable advantage if you can highlight or document at least one instance where the AI undertook work that you then corrected or improved upon.
 
 ## How to submit
 ### Candidates where programming is required (Data Scientist;  Engineers, Visualisation Engineers and Front End Developers)
