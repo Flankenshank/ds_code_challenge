@@ -52,6 +52,11 @@ the choices made in completing this assessment.
 We do not expect perfect recall of what you may have submitted, but we do expect a deep knowledge of the content, and 
 how it works.
 
+### Use of Generative AI and/or Coding Agents
+There is no restriction on the tools that you may use to complete this assessment. However we have tried to make the nature of this assessment within the scope of someone completing it without using AI assistance, as well as someone using them effectively.
+
+If you do make use of Generative AI/Coding Agents, please include an `AI_log.md` where you log all of the work that you asked AI assistance to undertake, including any prompots. It will be of considerable advantage if you can highlight or document at least one instance where the AI undertook work that you then corrected or improved upon.
+
 ## How to submit
 ### Candidates where programming is required (Data Scientist;  Engineers, Visualisation Engineers and Front End Developers)
 1. Clone this repository and load it into your development environment. 
@@ -98,7 +103,9 @@ We have made AWS credentials available in the following file, with the appropria
 ### 1. Data Extraction (if applying for a Data Engineering Position)
 Use the [AWS S3 SELECT](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-glacier-select-sql-reference-select.html) command to read in the H3 resolution 8 data from `city-hex-polygons-8-10.geojson`. Use the `city-hex-polygons-8.geojson` file to validate your work.
 
-Please log the time taken to perform the operations described, and within reason, try to optimise latency and computational resources used. Please also note the comments above about the nature of the code that we expect.
+Please also add an additional validation that checks conformance to a reasonable schema for the dataset. The output of this validation should be a conformance "score" of some sort, with a non-binary threshold of your choice. Explicitly capture the desired schema used to compute this conformance score in a standalone configuration or documentation file.
+
+Please log the time taken to perform the operations described as well as the validation steps, and within reason, try to optimise latency and computational resources used. Please also note the comments above about the nature of the code that we expect.
 
 ### 2. Initial Data Transformation (if applying for a Data Engineering, Visualisation Engineer, Front End Developer and/or Science Position)
 Join the equivalent of the contents of the file `city-hex-polygons-8.geojson` to the service request dataset, such that each service request is assigned to a single H3 resolution level 8 hexagon. Use the `sr_hex.csv.gz` file to validate your work.
@@ -152,14 +159,15 @@ process commentary, describing the quality of any initial results, refinements m
 Please also log the time taken to perform the operations described, and within reason, try to optimise latency and computation resources used. Please also note the comments above with respect to the nature of work that we expect from data scientists.
 
 ### 5. Further Data Transformations (if applying for a Data Engineering Position)
-1. Create a subsample of the data by selecting all of the requests in `sr_hex.csv.gz` which are within 1 minute of the centroid of the BELLVILLE SOUTH official suburb. You may determine the centroid of the suburb by the method of your choice, but if any external data is used, your code should programmatically download and perform the centroid calculation. Please clearly document your method.
+1. Create a subsample of the data by selecting all of the requests in `sr_hex.csv.gz` which are within 1 minute of the centroid of an official suburb in the proximity of Atlantis in the North of the City of Cape Town's bounds. You may determine the centroid of the suburb by the **computational** method of your choice (i.e. do not just hard code the value), but if any external data is used, your code should programmatically download and perform the centroid calculation. Please clearly document your method.
 
-2. Augment your filtered subsample of `sr_hex.csv.gz` from (1) with the appropriate [wind direction and speed data for 2020](https://www.capetown.gov.za/_layouts/OpenDataPortalHandler/DownloadHandler.ashx?DocumentName=Wind_direction_and_speed_2020.ods&DatasetDocument=https%3A%2F%2Fcityapps.capetown.gov.za%2Fsites%2Fopendatacatalog%2FDocuments%2FWind%2FWind_direction_and_speed_2020.ods) from the Bellville South Air Quality Measurement site, from when the notification was created. All of the steps for downloading and preparing the wind data, as well as the join should be performed programmatically within your script.
+2. Augment your filtered subsample of `sr_hex.csv.gz` from (1) with the appropriate [wind direction and speed data for 2020](https://www.capetown.gov.za/_layouts/OpenDataPortalHandler/DownloadHandler.ashx?DocumentName=Wind_direction_and_speed_2020.ods&DatasetDocument=https%3A%2F%2Fcityapps.capetown.gov.za%2Fsites%2Fopendatacatalog%2FDocuments%2FWind%2FWind_direction_and_speed_2020.ods) from the Atlantis Air Quality Measurement site, from when the notification was created. All of the steps for downloading and preparing the wind data, as well as the join should be performed programmatically within your script. This endpoint can be unreliable - please add an appropriate strategy for handling this, with commentary for why you chose this approach for handling an unreliable dependency.
 
 3. Write a script which anonymises your augmented subsample from (2), but preserves the following precisions (You may use H3 indice or lat/lon coordinates for your spatial data):
    * location accuracy to within approximately 500m
    * temporal accuracy to within 6 hours
-Please also remove any columns which you believe could lead to the resident who made the request being identified. We expect in the accompanying report that you will justify as to why this data is now anonymised. Please limit this commentary to less than 500 words. If your code is written in a code notebook such as Jupyter notebook or Rmarkdown, you can include this commentary in your notebook.
+   * Any records or columns which you believe could lead to the resident who made the request being identified despite the restrictions made above. For the records removed, make provision for a separate review by a person to anonymise the data by hand.
+We expect in the accompanying report that you will justify as to why this data is now anonymised. Please limit this commentary to less than 500 words. If your code is written in a code notebook such as Jupyter notebook or Rmarkdown, you can include this commentary in your notebook.
 
 ### 6. Data Visualisation Task (if applying for a Data Visualisation Engineering or Front End Developer Position)
 
@@ -179,4 +187,4 @@ The data visualisation / dashboard must include the following:
 Please also note the comments above about the nature of the code that we expect.
 
 ## Contact
-You can contact gordon.inggs, muhammed.ockards and/or colinscott.anthony @ capetown.gov.za for any questions on the above.
+You can contact gordon.inggs, muhammed.ockards, kathryn.mcdermott and/or colinscott.anthony @ capetown.gov.za for any questions on the above.
