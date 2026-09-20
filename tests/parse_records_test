@@ -1,0 +1,4 @@
+from extract import parse_records
+
+events = ({"Records": {"Payload": b'{"a":1}\n{"b'}}, {"Records": {"Payload": b'":2}\n{"c":3}'}})
+print(parse_records(events))
