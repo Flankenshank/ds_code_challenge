@@ -1,0 +1,23 @@
+{
+  "$schema_ref": "geojson_feature_schema.json",
+  "description": "Weighting and thresholds for GeoJSON conformance scoring",
+  "rule_weights": {
+    "feature.type": 1.0,
+    "properties.index": 1.5,
+    "properties.centroid_lat": 1.0,
+    "properties.centroid_lon": 1.0,
+    "properties.resolution": 1.0,
+    "geometry.type": 1.0,
+    "geometry.coordinates": 1.5
+  },
+  "default_weight": 1.0,
+  "scoring": {
+    "method": "weighted_pass_ratio",
+    "formula": "1 - (sum(failed_rule_weights) / sum(all_rule_weights_evaluated))"
+  },
+  "thresholds": [
+    { "label": "PASS", "min_score": 0.98 },
+    { "label": "WARN", "min_score": 0.90 },
+    { "label": "FAIL", "min_score": 0.0 }
+  ]
+}
