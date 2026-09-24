@@ -26,7 +26,7 @@ def extract_data_from_s3(client, bucket, source_file, resolution=8):
     response = client.select_object_content(
         Bucket=bucket,
         Key=source_file,
-        Expression="SELECT * FROM S3Object[*].features[*] f WHERE f.properties.resolution = " + str(resolution),
+        Expression="SELECT * FROM S3Object[*].features[*] f WHERE f.properties.resolution = " + str(int(resolution)),
         ExpressionType="SQL",
         InputSerialization={"JSON": {"Type": "DOCUMENT"}},
         OutputSerialization={"JSON": {}}

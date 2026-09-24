@@ -15,6 +15,11 @@ import geopandas as gpd
 import pandas as pd
 from timing import logger
 
+def hex_gdf_from_features(features):
+    """Build the hex polygon GeoDataFrame from already-downloaded GeoJSON features."""
+    gdf = gpd.GeoDataFrame.from_features(features, crs="EPSG:4326")
+    return gdf.rename(columns={"index": "h3_level8_index"})[["h3_level8_index", "geometry"]]
+
 
 def load_hex_polygons_from_s3(client, bucket, key):
     """Load the resolution-8 hex polygons as a GeoDataFrame keyed by H3 index."""
@@ -85,8 +90,7 @@ def assign_hex_index(sr_df, hex_gdf, error_threshold=0.01):
 
     # A point could match >1 polygon if it falls exactly on a shared edge/vertex.
     dup_count = joined.index.duplicated().sum()
-    if dup_count:
-        logger.warning(f"{dup_count} requests matched more than one hexagon (boundary points); keeping first match")
+    logger.info(f"Duplicate matches: {dup_count}")
     joined = joined[~joined.index.duplicated(keep="first")]
 
     joined = joined.drop(columns=["geometry", "index_right"], errors="ignore")
@@ -113,36 +117,49 @@ def assign_hex_index(sr_df, hex_gdf, error_threshold=0.01):
     return result
 
 
-def validate_against_reference(assigned_df, reference_path_or_url, id_column="notification_number", sep=","):
-    reference_df = pd.read_csv(reference_path_or_url, compression="gzip", sep=sep)
+def validate_against_reference_df(assigned_df, reference_df, key="notification_number"):
+    """
+    Compare computed hex indices with the reference column already loaded in
+    reference_df. Only rows with coordinates are compared; the reference values
+    for rows with missing coordinates are summarised so they can be checked.
+    """
+    if reference_df[key].duplicated().any():
+        raise ValueError(f"'{key}' is not unique in the reference data; cannot merge safely")
 
-    merged = assigned_df.merge(
-        reference_df[[id_column, "h3_level8_index"]],
-        on=id_column,
-        suffixes=("_computed", "_reference"),
+    reference = reference_df[[key, "h3_level8_index"]].rename(
+        columns={"h3_level8_index": "h3_level8_index_reference"}
+    )
+    merged = assigned_df.rename(columns={"h3_level8_index": "h3_level8_index_computed"}).merge(
+        reference, on=key, how="left"
     )
 
-    has_coords_mask = merged["h3_level8_index_computed"] != 0
-    coord_rows = merged[has_coords_mask]
-    no_coord_rows = merged[~has_coords_mask]
+    has_coords = merged["latitude"].notna() & merged["longitude"].notna()
+    compared = merged[has_coords]
+    computed = compared["h3_level8_index_computed"]
+    ref = compared["h3_level8_index_reference"]
 
-    coord_mismatches = coord_rows[
-        coord_rows["h3_level8_index_computed"] != coord_rows["h3_level8_index_reference"]
-    ]
-    coord_match_rate = 1 - (len(coord_mismatches) / len(coord_rows)) if len(coord_rows) else 0.0
+    matches = (computed == ref) | (computed.isna() & ref.isna())
+    mismatches = compared[~matches]
+    match_rate = matches.mean() if len(compared) else 0.0
+
+    missing = merged[~has_coords]
+    missing_ref_values = (
+        missing["h3_level8_index_reference"].value_counts(dropna=False).head(5).to_dict()
+    )
 
     logger.info(
-        f"Hex assignment match rate (rows with coordinates only): "
-        f"{coord_match_rate:.4%} ({len(coord_mismatches)} mismatches / {len(coord_rows)} compared)"
+        f"Hex assignment match rate (rows with coordinates only): {match_rate:.4%} "
+        f"({len(mismatches)} mismatches / {len(compared)} compared)"
     )
     logger.info(
-        f"Rows with missing coordinates: {len(no_coord_rows)} (set to 0 per spec; "
-        f"reference file's representation for these rows may differ)"
+        f"Rows with missing coordinates: {len(missing)}; "
+        f"most common reference values for these rows: {missing_ref_values}"
     )
 
     return {
-        "match_rate": coord_match_rate,
-        "total_compared": len(coord_rows),
-        "mismatches": coord_mismatches,
-        "missing_coord_rows": len(no_coord_rows),
+        "match_rate": match_rate,
+        "total_compared": len(compared),
+        "mismatches": mismatches,
+        "missing_coord_rows": len(missing),
+        "missing_coord_reference_values": missing_ref_values,
     }

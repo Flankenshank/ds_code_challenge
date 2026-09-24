@@ -1,3 +1,5 @@
+from timing import logger
+
 def normalize_ring(ring, decimals=7):
     """Round coordinates and drop the duplicated closing point for comparison."""
     rounded = [[round(lon, decimals), round(lat, decimals)] for lon, lat in ring]
@@ -29,6 +31,10 @@ def rings_match(ring_a, ring_b, decimals=7):
 
 
 def polygons_match(geom_a, geom_b, decimals=7):
+    if geom_a is None or geom_b is None:
+        return False
+    if geom_a.get("type") != geom_b.get("type"):
+        return False
     """
     Compare two GeoJSON Polygon geometries with coordinate rounding,
     ignoring closing-point duplication, winding direction, and start vertex.
@@ -48,13 +54,21 @@ def polygons_match(geom_a, geom_b, decimals=7):
         rings_match(ra, rb, decimals) for ra, rb in zip(rings_a, rings_b)
     )
 
+def index_features(features, label):
+    """Index features by H3 index, warning if any index appears more than once."""
+    by_index = {f["properties"]["index"]: f for f in features}
+    duplicates = len(features) - len(by_index)
+    if duplicates:
+        logger.warning(f"{label}: {duplicates} duplicate index values found; keeping the last feature for each")
+    return by_index
+
 def compare_features(extracted_data, reference_data, coord_tolerance=1e-9):
     """
     Compare extracted features against a reference/verification dataset,
     matched by H3 index.
     """
-    extracted_by_index = {f["properties"]["index"]: f for f in extracted_data}
-    reference_by_index = {f["properties"]["index"]: f for f in reference_data}
+    extracted_by_index = index_features(extracted_data, "Extracted data")
+    reference_by_index = index_features(reference_data, "Reference data")
 
     extracted_indices = set(extracted_by_index.keys())
     reference_indices = set(reference_by_index.keys())
@@ -77,7 +91,9 @@ def compare_features(extracted_data, reference_data, coord_tolerance=1e-9):
 
         ext_geom = extracted_by_index[idx].get("geometry")
         ref_geom = reference_by_index[idx].get("geometry")
-        if not polygons_match(ext_geom, ref_geom, decimals=7):
+        if ext_geom is None or ref_geom is None:
+            diffs["geometry"] = "missing"
+        elif not polygons_match(ext_geom, ref_geom, decimals=7):
             diffs["geometry"] = "mismatch"
 
         if diffs:
@@ -97,14 +113,16 @@ def compare_features(extracted_data, reference_data, coord_tolerance=1e-9):
         "mismatches": mismatches,
     }
 
-    print(f"🔁 Comparison match rate: {match_rate:.4%}")
-    print(f"   Reference: {total_reference} | Extracted: {len(extracted_indices)} | "
-          f"Exact matches: {exact_matches}")
+    logger.info(
+        f"Comparison match rate: {match_rate:.4%} "
+        f"(reference: {total_reference}, extracted: {len(extracted_indices)}, "
+        f"exact matches: {exact_matches})"
+    )
     if missing_from_extracted:
-        print(f"   ⚠️  {len(missing_from_extracted)} indices in reference but missing from extracted")
+        logger.warning(f"{len(missing_from_extracted)} indices in reference but missing from extracted")
     if extra_in_extracted:
-        print(f"   ⚠️  {len(extra_in_extracted)} indices in extracted but not in reference")
+        logger.warning(f"{len(extra_in_extracted)} indices in extracted but not in reference")
     if mismatches:
-        print(f"   ⚠️  {len(mismatches)} common indices have field-level differences")
+        logger.warning(f"{len(mismatches)} common indices have field-level differences")
 
     return result
