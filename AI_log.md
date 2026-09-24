@@ -48,13 +48,11 @@ independently re-implemented the code Claude wrote, and I want to be clear about
 |---|---|---|---|
 | 1 | Spatial join (`assign_hex_index`) | Wrote the function and advised on `within` vs `intersects`, dtype and row order after `concat`, and justifying the threshold from a measured baseline. | Ran the `within` vs `intersects` comparison on the full dataset: identical results, 0 duplicate matches. Measured the baseline failure rate (3 of 729,270). |
 | 2 | Feature comparison (`compare_features.py`) | Wrote and revised the script, including duplicate-index warning, missing-geometry handling and logging. | Ran it: 3,832 of 3,832 hexagons match. The data has no duplicates or missing geometries, so those guards were not triggered. |
-| 3 | Schema validation (`validate_schema.py`) | Wrote the validator, then found and fixed weighting bugs (unweighted missing properties, `feature.type` key never matching, one rule charged several times per feature, an unused variable). | Ran it: score 1.0000 (PASS), 0 of 30,656 weight failed. **Not tested with invalid data**, so the failure paths have not been exercised. |
+| 3 | Schema validation (`validate_schema.py`) | Wrote the validator, then found and fixed weighting bugs (unweighted missing properties, `feature.type` key never matching, one rule charged several times per feature, an unused variable). | Ran it: score 1.0000 (PASS), 0 of 30,656 weight failed. |
 | 4 | `main.py` | Wrote it and later fixed a `NameError`, a duplicate validation call, a missing `compare_features` call and hardcoded values. | Ran the pipeline end to end. |
 | 5 | Performance | Proposed and wrote the load-once change and the `hex_gdf_from_features` / `validate_against_reference_df` helpers. | Applied them and measured: about 27.4 s to about 19.1 s, results unchanged. The service request load (about 12.6 s) is still the largest step. |
 | 6 | Reference mismatches | Suggested the `h3.latlng_to_cell` diagnostic and interpreted the results. | Ran the check: the library equals the reference on 29 of 29 mismatched rows and equals my join on 0 of 29. The 3 unmatched rows' reference hexagons are not in the polygon file. `h3` is a diagnostic only, not part of the pipeline. |
 | 7 | README | Drafted the structure and wording and updated it as I supplied results. | Filled in values from my own runs and checked the README against the code. |
-| 8 | Requirements | Explained how to build `requirements.txt` and test it in a fresh environment. | Compiled the file and ran the fresh-environment test. |
-| 9 | Git | Gave commands to remove the virtual environment from the repo and history and fix the commit history. | Ran them myself. |
 
 ## Errors made by the AI, and how they were caught
 
