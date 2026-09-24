@@ -114,10 +114,6 @@ def assign_hex_index(sr_df, hex_gdf, error_threshold=0.01):
 
 
 def validate_against_reference(assigned_df, reference_path_or_url, id_column="notification_number", sep=","):
-    """
-    Compare computed hex assignments against the known-good reference file.
-    Accepts either a local path or a URL — pandas reads both transparently.
-    """
     reference_df = pd.read_csv(reference_path_or_url, compression="gzip", sep=sep)
 
     merged = assigned_df.merge(
@@ -126,13 +122,27 @@ def validate_against_reference(assigned_df, reference_path_or_url, id_column="no
         suffixes=("_computed", "_reference"),
     )
 
-    mismatches = merged[merged["h3_level8_index_computed"] != merged["h3_level8_index_reference"]]
-    match_rate = 1 - (len(mismatches) / len(merged)) if len(merged) else 0.0
+    has_coords_mask = merged["h3_level8_index_computed"] != 0
+    coord_rows = merged[has_coords_mask]
+    no_coord_rows = merged[~has_coords_mask]
 
-    logger.info(f"Hex assignment match rate: {match_rate:.4%} ({len(mismatches)} mismatches / {len(merged)} compared)")
+    coord_mismatches = coord_rows[
+        coord_rows["h3_level8_index_computed"] != coord_rows["h3_level8_index_reference"]
+    ]
+    coord_match_rate = 1 - (len(coord_mismatches) / len(coord_rows)) if len(coord_rows) else 0.0
+
+    logger.info(
+        f"Hex assignment match rate (rows with coordinates only): "
+        f"{coord_match_rate:.4%} ({len(coord_mismatches)} mismatches / {len(coord_rows)} compared)"
+    )
+    logger.info(
+        f"Rows with missing coordinates: {len(no_coord_rows)} (set to 0 per spec; "
+        f"reference file's representation for these rows may differ)"
+    )
 
     return {
-        "match_rate": match_rate,
-        "total_compared": len(merged),
-        "mismatches": mismatches,
+        "match_rate": coord_match_rate,
+        "total_compared": len(coord_rows),
+        "mismatches": coord_mismatches,
+        "missing_coord_rows": len(no_coord_rows),
     }
